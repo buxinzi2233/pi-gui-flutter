@@ -4375,6 +4375,36 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'Worktree · {name}'**
   String sectionWorktree(String name);
+
+  /// No description provided for @sectionRemoveUnassignedHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'移除“未分区”标题后，其中的项目会直接显示在列表中。文件和会话会保留。'**
+  String get sectionRemoveUnassignedHint;
+
+  /// No description provided for @projectQuickChoose.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择项目文件夹'**
+  String get projectQuickChoose;
+
+  /// No description provided for @projectQuickHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择项目会打开该目录的会话，当前对话和草稿会保留。'**
+  String get projectQuickHint;
+
+  /// No description provided for @projectQuickSearch.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索项目名称或路径…'**
+  String get projectQuickSearch;
+
+  /// No description provided for @projectCreateFolder.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建项目文件夹'**
+  String get projectCreateFolder;
 }
 
 class _AppLocalizationsDelegate

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:pi_gui/core/rpc/pi_catalog_types.dart';
-import 'package:pi_gui/core/rpc/pi_browser_types.dart';
 import 'package:pi_gui/ui/atoms/app_action_button.dart';
 import 'package:pi_gui/ui/atoms/app_dialog.dart';
 import 'package:pi_gui/ui/atoms/app_icon_button.dart';
@@ -16,11 +15,10 @@ import 'package:pi_gui/ui/core/theme/app_tokens.dart';
 import 'package:pi_gui/ui/core/theme/theme_context_extensions.dart';
 
 import '../controllers/workbench_controller.dart';
-import '../browser_labels.dart';
 import '../workspace_labels.dart';
 import 'quota_sidebar_button.dart';
 
-enum _ProjectAction { forget, worktree, move }
+enum _ProjectAction { forget, worktree, manageWorktrees, move }
 
 enum _SectionAction { rename, up, down, delete }
 
@@ -201,7 +199,7 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
       }
       yield Tooltip(
         message:
-            '${session.title}\n${DateFormat.yMd().add_Hm().format(session.modified.toLocal())}',
+            '${session.title}\n$path\n${DateFormat.yMd().add_Hm().format(session.modified.toLocal())}',
         child: AppTreeTile(
           title: session.title.isEmpty ? l10n.newConversation : session.title,
           icon: Icons.history,
@@ -230,205 +228,86 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
     }
   }
 
-  // These anchors keep live/remembered subdirectory sessions reachable even
-  // before their parents have been read, or beyond a paginated disk listing.
-  Iterable<String> _anchors(PiCatalogProject project) => {
-    ...project.worktrees.map((w) => w.path),
-    ...controller.sessions.values.map((s) => s.workspace),
-    ...controller.history.keys,
-  };
-
-  bool _matchingBelow(String path) =>
-      controller.sessions.values.any(
-        (s) =>
-            (p.equals(path, s.workspace) || p.isWithin(path, s.workspace)) &&
-            _matches(s.chat.title),
-      ) ||
-      controller.history.entries.any(
-        (entry) =>
-            (p.equals(path, entry.key) || p.isWithin(path, entry.key)) &&
-            entry.value.any((s) => _matches(s.title)),
-      );
-
-  Iterable<Widget> _contents(
-    PiCatalogProject project,
-    String root,
-    String relative,
-    int depth, {
-    required bool matchAll,
-  }) sync* {
-    final browser = controller.browserFor(root);
-    final cwd = relative.isEmpty ? root : p.join(root, relative);
-    yield* _sessions(cwd, depth, matchAll);
-    final listing = browser.directories[relative];
-    final entries = <String, PiFileEntry>{
-      for (final entry in listing?.entries ?? <PiFileEntry>[])
-        entry.name: entry,
-    };
-    final directories = <String>{
-      for (final entry in listing?.entries ?? <PiFileEntry>[])
-        if (entry.directory) entry.name,
-    };
-    for (final anchor in _anchors(project)) {
-      if (p.isWithin(cwd, anchor)) {
-        final name = p.split(p.relative(anchor, from: cwd)).first;
-        // Never turn a file or symlink from the real listing into a directory.
-        if (!entries.containsKey(name) || entries[name]!.directory) {
-          directories.add(name);
-        }
-      }
-    }
-    final names = {...entries.keys, ...directories}.toList()
-      ..sort((a, b) {
-        final byKind = (directories.contains(a) ? 0 : 1).compareTo(
-          directories.contains(b) ? 0 : 1,
-        );
-        return byKind != 0
-            ? byKind
-            : a.toLowerCase().compareTo(b.toLowerCase());
-      });
-    for (final name in names) {
-      final child = relative.isEmpty ? name : '$relative/$name';
-      final absolute = p.join(root, child);
-      final entry = entries[name];
-      final directory = directories.contains(name);
-      final worktree = project.worktrees
-          .where((w) => !w.main && !w.folder && p.equals(w.path, absolute))
-          .firstOrNull;
-      final matches = matchAll || _matches(name);
-      final matchingFiles =
-          directory &&
-          browser.directories.entries.any(
-            (listing) =>
-                (listing.key == child || listing.key.startsWith('$child/')) &&
-                listing.value.entries.any((file) => _matches(file.name)),
-          );
-      if (!matches &&
-          (!directory || (!_matchingBelow(absolute) && !matchingFiles))) {
-        continue;
-      }
-      final expanded =
-          directory &&
-          (_query.isNotEmpty ||
-              controller.expandedWorktrees.contains(absolute));
-      yield Tooltip(
-        message: worktree == null
-            ? absolute
-            : '$absolute\n${worktree.branch ?? worktree.name}',
-        child: AppTreeTile(
-          title: worktree == null ? name : context.l10n.sectionWorktree(name),
-          depth: depth,
-          icon: worktree != null
-              ? Icons.account_tree_outlined
-              : entry?.symlink == true
-              ? Icons.link
-              : directory
-              ? (expanded ? Icons.folder_open_outlined : Icons.folder_outlined)
-              : Icons.insert_drive_file_outlined,
-          expanded: directory ? expanded : null,
-          loading: directory && browser.loadingDirectory(child),
-          onTap: directory
-              ? () => controller.toggleDirectory(root, child)
-              : () => controller.openFile(root, child),
-          onExpand: directory && !expanded
-              ? () => controller.toggleDirectory(root, child)
-              : null,
-          onCollapse: expanded
-              ? () => controller.toggleDirectory(root, child)
-              : null,
-          trailing: directory
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppIconButton.subtle(
-                      icon: Icons.add,
-                      size: 24,
-                      tooltip: context.l10n.newConversation,
-                      onPressed:
-                          controller.opening ||
-                              entry?.missing == true ||
-                              worktree?.unavailable == true
-                          ? null
-                          : () => controller.openSession(absolute),
-                    ),
-                    if (worktree != null)
-                      AppMenuButton<String>(
-                        icon: Icons.more_horiz,
-                        tooltip: context.l10n.worktreeManage,
-                        options: [
-                          AppMenuOption(
-                            value: 'remove',
-                            label: context.l10n.worktreeRemove,
-                            icon: Icons.delete_outline,
-                          ),
-                        ],
-                        onSelected: (_) =>
-                            widget.onRemoveWorktree(project, worktree),
-                      ),
-                  ],
-                )
-              : null,
+  Future<void> _hideUnassigned() async {
+    final confirmed = await showAppDialog<bool>(
+      context,
+      (context) => AppDialog(
+        title: context.l10n.sectionDelete,
+        actions: [
+          AppActionButton.subtle(
+            label: context.l10n.cancel,
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          AppActionButton(
+            label: context.l10n.sectionDelete,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+        child: Text(
+          context.l10n.sectionRemoveUnassignedHint,
+          style: context.textTheme.bodyMedium,
         ),
-      );
-      if (expanded) {
-        yield* _contents(project, root, child, depth + 1, matchAll: matches);
-      }
-    }
-    if (browser.loadingDirectory(relative)) {
-      yield AppTreeTile(
-        title: context.l10n.browserLoading,
-        icon: Icons.folder_outlined,
-        depth: depth,
-        loading: true,
-      );
-    }
-    if (browser.directoryErrors[relative] case final error?) {
-      yield AppTreeTile(
-        title: browserError(context, error),
-        icon: Icons.refresh,
-        depth: depth,
-        onTap: () => browser.loadDirectory(relative, force: true),
-      );
-    }
-    if (listing?.hasMore == true) {
-      yield AppTreeTile(
-        title: browser.directoryLimit(relative) >= 5000
-            ? context.l10n.browserLimit
-            : context.l10n.browserMore,
-        icon: Icons.more_horiz,
-        depth: depth,
-        onTap:
-            browser.directoryLimit(relative) >= 5000 ||
-                browser.loadingDirectory(relative)
-            ? null
-            : () => browser.loadDirectory(relative, more: true),
-      );
-    }
+      ),
+    );
+    if (mounted && confirmed == true) await controller.hideUnassigned();
   }
 
-  Widget _project(PiCatalogProject project, bool sectionMatches) {
+  Future<void> _manageWorktrees(PiCatalogProject project) =>
+      showAppDialog<void>(
+        context,
+        (context) => AppDialog(
+          title: context.l10n.worktreeManage,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final tree in project.worktrees.where(
+                (w) => !w.main && !w.folder,
+              ))
+                AppNavTile(
+                  title: tree.name,
+                  subtitle: tree.path,
+                  leading: const Icon(Icons.account_tree_outlined),
+                  trailing: AppIconButton.subtle(
+                    icon: Icons.delete_outline,
+                    tooltip: context.l10n.worktreeRemove,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      widget.onRemoveWorktree(project, tree);
+                    },
+                  ),
+                  onTap: tree.unavailable || controller.opening
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                          controller.selectWorktree(tree.path);
+                        },
+                ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _project(
+    PiCatalogProject project,
+    bool sectionMatches, {
+    int depth = 1,
+  }) {
     final l10n = context.l10n;
     final matchAll =
         _query.isEmpty ||
         sectionMatches ||
         _matches('${project.name} ${project.path}');
-    final roots = project.worktrees.where(
-      (w) =>
-          !p.equals(w.path, project.path) && !p.isWithin(project.path, w.path),
+    final workspaces = controller.workspacesForProject(project).toList();
+    final hasMatch = workspaces.any(
+      (path) =>
+          controller
+              .sessionsFor(path)
+              .any((session) => _matches(session.chat.title)) ||
+          (controller.history[path] ?? []).any(
+            (session) => _matches(session.title),
+          ),
     );
-    final browser = controller.browserFor(project.path);
-    final fileMatch = browser.directories.values.any(
-      (listing) => listing.entries.any((e) => _matches(e.name)),
-    );
-    if (!matchAll &&
-        !_matchingBelow(project.path) &&
-        !fileMatch &&
-        !roots.any(
-          (w) =>
-              _matches('${w.name} ${w.branch ?? ''}') || _matchingBelow(w.path),
-        )) {
-      return const SizedBox.shrink();
-    }
+    if (!matchAll && !hasMatch) return const SizedBox.shrink();
     final expanded =
         _query.isNotEmpty || controller.expandedProjects.contains(project.path);
     final unavailable =
@@ -445,7 +324,7 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
           child: AppTreeTile(
             title: project.name,
             icon: Icons.folder_open_outlined,
-            depth: 1,
+            depth: depth,
             expanded: expanded,
             onTap: () => controller.toggleProject(project.path),
             onExpand: !expanded
@@ -474,6 +353,12 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
                       label: l10n.sectionMoveProject,
                       icon: Icons.drive_file_move_outlined,
                     ),
+                    if (project.worktrees.any((w) => !w.main && !w.folder))
+                      AppMenuOption(
+                        value: _ProjectAction.manageWorktrees,
+                        label: l10n.worktreeManage,
+                        icon: Icons.account_tree_outlined,
+                      ),
                     if (project.git && project.hasHead)
                       AppMenuOption(
                         value: _ProjectAction.worktree,
@@ -492,6 +377,8 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
                           switch (action) {
                             case _ProjectAction.move:
                               _moveProject(project);
+                            case _ProjectAction.manageWorktrees:
+                              _manageWorktrees(project);
                             case _ProjectAction.worktree:
                               widget.onCreateWorktree(project);
                             case _ProjectAction.forget:
@@ -504,8 +391,8 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
           ),
         ),
         if (expanded) ...[
-          ..._contents(project, project.path, '', 2, matchAll: matchAll),
-          for (final tree in roots) ..._externalTree(project, tree, matchAll),
+          for (final path in workspaces)
+            ..._sessions(path, depth + 1, matchAll),
           for (final job
               in controller.catalog?.jobs.where(
                     (j) =>
@@ -516,7 +403,7 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
               title: job.status == 'failed'
                   ? workspaceFailureLabel(l10n, job.error ?? '')
                   : job.name,
-              depth: 2,
+              depth: depth + 1,
               icon: job.status == 'failed'
                   ? Icons.error_outline
                   : Icons.hourglass_top,
@@ -526,64 +413,6 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
         ],
       ],
     );
-  }
-
-  Iterable<Widget> _externalTree(
-    PiCatalogProject project,
-    PiCatalogWorktree tree,
-    bool matchAll,
-  ) sync* {
-    final matches = matchAll || _matches('${tree.name} ${tree.branch ?? ''}');
-    if (!matches && !_matchingBelow(tree.path)) return;
-    final expanded =
-        _query.isNotEmpty || controller.expandedWorktrees.contains(tree.path);
-    yield Tooltip(
-      message: tree.path,
-      child: AppTreeTile(
-        title: tree.folder
-            ? tree.name
-            : context.l10n.sectionWorktree(tree.name),
-        icon: tree.folder ? Icons.folder_outlined : Icons.account_tree_outlined,
-        depth: 2,
-        expanded: expanded,
-        onTap: () => controller.toggleDirectory(tree.path, ''),
-        onExpand: !expanded
-            ? () => controller.toggleDirectory(tree.path, '')
-            : null,
-        onCollapse: expanded
-            ? () => controller.toggleDirectory(tree.path, '')
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIconButton.subtle(
-              icon: Icons.add,
-              size: 24,
-              tooltip: context.l10n.newConversation,
-              onPressed: tree.unavailable || controller.opening
-                  ? null
-                  : () => controller.openSession(tree.path),
-            ),
-            if (!tree.folder)
-              AppMenuButton<String>(
-                icon: Icons.more_horiz,
-                tooltip: context.l10n.worktreeManage,
-                options: [
-                  AppMenuOption(
-                    value: 'remove',
-                    label: context.l10n.worktreeRemove,
-                    icon: Icons.delete_outline,
-                  ),
-                ],
-                onSelected: (_) => widget.onRemoveWorktree(project, tree),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (expanded) {
-      yield* _contents(project, tree.path, '', 3, matchAll: matches);
-    }
   }
 
   Widget _section(PiCatalogSection? section) {
@@ -627,6 +456,19 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
                     ? null
                     : () => widget.onAddProject(section?.id),
               ),
+              if (section == null)
+                AppMenuButton<String>(
+                  icon: Icons.more_horiz,
+                  tooltip: l10n.sectionManage,
+                  options: [
+                    AppMenuOption(
+                      value: 'remove',
+                      label: l10n.sectionDelete,
+                      icon: Icons.delete_outline,
+                    ),
+                  ],
+                  onSelected: _organizing ? null : (_) => _hideUnassigned(),
+                ),
               if (section != null)
                 AppMenuButton<_SectionAction>(
                   icon: Icons.more_horiz,
@@ -716,6 +558,11 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
                 onPressed: controller.loading ? null : controller.refreshTree,
               ),
               AppIconButton.subtle(
+                icon: Icons.create_new_folder_outlined,
+                tooltip: l10n.workbenchAddProject,
+                onPressed: _organizing ? null : () => widget.onAddProject(null),
+              ),
+              AppIconButton.subtle(
                 tooltip: l10n.sectionCreate,
                 icon: Icons.playlist_add,
                 onPressed: _organizing ? null : () => _nameSection(),
@@ -751,7 +598,25 @@ class _WorkbenchSidebarState extends State<WorkbenchSidebar> {
                 for (final section
                     in controller.catalog?.sections ?? <PiCatalogSection>[])
                   _section(section),
-                _section(null),
+                if (controller.catalog?.unassignedHidden == true)
+                  for (final project
+                      in controller.catalog?.projects.where(
+                            (p) => p.sectionId == null,
+                          ) ??
+                          <PiCatalogProject>[])
+                    _project(project, false, depth: 0)
+                else if (controller.catalog?.projects.any(
+                      (p) => p.sectionId == null,
+                    ) ==
+                    true)
+                  _section(null),
+                if (controller.catalog?.projects.isEmpty == true &&
+                    controller.catalog?.sections.isEmpty == true)
+                  AppNavTile(
+                    title: l10n.workbenchAddProject,
+                    leading: const Icon(Icons.create_new_folder_outlined),
+                    onTap: () => widget.onAddProject(null),
+                  ),
                 if (controller.loading && controller.catalog == null)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.sm),

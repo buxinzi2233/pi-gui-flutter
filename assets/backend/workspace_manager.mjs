@@ -46,6 +46,7 @@ export class WorkspaceManager {
     this.workspaceRoots = new Map();
     this.projects = [];
     this.sections = [];
+    this.unassignedHidden = false;
     this.names = {};
     this.jobs = [];
     this.locks = new Set();
@@ -55,6 +56,7 @@ export class WorkspaceManager {
   }
   async initialize() {
     const saved = this.service.catalog;
+    this.unassignedHidden = saved?.unassignedHidden === true;
     if ([1, 2].includes(saved?.version) && Array.isArray(saved.projects)) {
       this.projects = saved.projects.filter(
         (p) => typeof p.path === "string" && typeof p.name === "string",
@@ -113,6 +115,7 @@ export class WorkspaceManager {
       this.service.catalog = {
         version: 2,
         sections: this.sections,
+        unassignedHidden: this.unassignedHidden,
         projects: this.projects,
         names: this.names,
       };
@@ -222,6 +225,7 @@ export class WorkspaceManager {
     return {
       version: 2,
       sections: this.sections,
+      unassignedHidden: this.unassignedHidden,
       projects,
       channels: [...this.channels.values()].map((c) => this.describe(c)),
       jobs: this.jobs,
@@ -447,6 +451,14 @@ export class WorkspaceManager {
     if (this.channels.has(request.channelId))
       return this.describe(this.channels.get(request.channelId));
     const entry = this.launch(request.channelId, cwd, sessionFile);
+    const project = this.projects.find(
+      (p) => key(p.path) === this.workspaceOwner(cwd),
+    );
+    if (project && !this.workspaceRoots.has(key(cwd))) {
+      project.folders ??= [];
+      if (!project.folders.some((folder) => key(folder) === key(cwd)))
+        project.folders.push(cwd);
+    }
     this.service.current = cwd;
     await this.save();
     this.changed();
@@ -554,6 +566,8 @@ export class WorkspaceManager {
   control(request) {
     if (
       [
+        "gui_hide_unassigned",
+        "gui_create_project",
         "gui_create_section",
         "gui_update_section",
         "gui_delete_section",
@@ -574,6 +588,33 @@ export class WorkspaceManager {
     switch (request.type) {
       case "gui_get_catalog":
         return this.catalog();
+      case "gui_hide_unassigned": {
+        this.unassignedHidden = true;
+        await this.save();
+        this.changed();
+        return {};
+      }
+      case "gui_create_project": {
+        if (
+          request.sectionId != null &&
+          !this.sections.some((s) => s.id === request.sectionId)
+        )
+          fail("SECTION_UNAVAILABLE");
+        const result = await this.scope(request.parent).createWorkspace(
+          request.parent,
+          request.name,
+        );
+        const cwd = await this.register(result.path, false);
+        if (request.sectionId != null) {
+          await this.catalog();
+          this.projects.find(
+            (p) => key(p.path) === this.workspaceOwner(cwd),
+          ).sectionId = request.sectionId;
+        }
+        await this.save();
+        this.changed();
+        return { path: cwd };
+      }
       case "gui_create_section": {
         if (
           typeof request.sectionId !== "string" ||

@@ -373,7 +373,7 @@ class WorkbenchController extends ChangeNotifier {
         }
         for (final project in next.projects) {
           if (expandedProjects.contains(project.path)) {
-            ensureDirectory(project.path);
+            loadProjectHistory(project);
           }
         }
         if (selectedWorkspace == null && next.projects.isNotEmpty) {
@@ -458,21 +458,7 @@ class WorkbenchController extends ChangeNotifier {
           if (p.equals(tree.path, session.workspace) ||
               p.isWithin(tree.path, session.workspace)) {
             expandedProjects.add(project.path);
-            var current = session.workspace;
-            while (p.isWithin(tree.path, current)) {
-              expandedWorktrees.add(current);
-              current = p.dirname(current);
-            }
-            expandedWorktrees.add(tree.path);
-            ensureDirectory(tree.path);
-            for (final folder in expandedWorktrees.where(
-              (path) => p.isWithin(tree.path, path),
-            )) {
-              ensureDirectory(
-                tree.path,
-                relative: p.relative(folder, from: tree.path),
-              );
-            }
+            unawaited(loadHistory(session.workspace));
           }
         }
       }
@@ -714,43 +700,59 @@ class WorkbenchController extends ChangeNotifier {
     }
   }
 
-  void ensureDirectory(String root, {String relative = ''}) {
-    final browser = browserFor(root);
-    final normalized = relative.replaceAll('\\', '/');
-    if (!browser.directories.containsKey(normalized) &&
-        !browser.directoryErrors.containsKey(normalized)) {
-      unawaited(browser.loadDirectory(normalized));
+  PiCatalogProject? projectForWorkspace(String workspace) {
+    PiCatalogProject? match;
+    var length = -1;
+    for (final project in catalog?.projects ?? <PiCatalogProject>[]) {
+      for (final root in {
+        project.path,
+        ...project.worktrees.map((w) => w.path),
+      }) {
+        if ((p.equals(root, workspace) || p.isWithin(root, workspace)) &&
+            root.length > length) {
+          match = project;
+          length = root.length;
+        }
+      }
     }
-    unawaited(loadHistory(relative.isEmpty ? root : p.join(root, relative)));
+    return match;
   }
 
-  void toggleDirectory(String root, String relative) {
-    final path = relative.isEmpty ? root : p.join(root, relative);
-    if (!expandedWorktrees.remove(path)) {
-      expandedWorktrees.add(path);
-      ensureDirectory(root, relative: relative);
+  Iterable<String> workspacesForProject(PiCatalogProject project) => {
+    project.path,
+    ...project.worktrees.where((w) => !w.unavailable).map((w) => w.path),
+    ...sessions.values
+        .map((s) => s.workspace)
+        .where((path) => projectForWorkspace(path)?.path == project.path),
+    ...history.keys.where(
+      (path) => projectForWorkspace(path)?.path == project.path,
+    ),
+  };
+
+  void loadProjectHistory(PiCatalogProject project) {
+    for (final path in workspacesForProject(project)) {
+      unawaited(loadHistory(path));
     }
-    _notify();
   }
 
   Future<void> refreshTree() async {
     await refresh();
-    for (final browser in _browsers.values.toList()) {
-      if (browser.directories.isNotEmpty) {
-        for (final relative in browser.directories.keys.toList()) {
-          await browser.loadDirectory(relative, force: true);
+    for (final project in catalog?.projects ?? <PiCatalogProject>[]) {
+      if (expandedProjects.contains(project.path)) {
+        for (final path in workspacesForProject(project)) {
+          await loadHistory(path, force: true);
         }
       }
-    }
-    for (final path in {...expandedProjects, ...expandedWorktrees}) {
-      await loadHistory(path, force: true);
     }
   }
 
   void toggleProject(String path) {
     if (!expandedProjects.remove(path)) {
       expandedProjects.add(path);
-      ensureDirectory(path);
+      final project = catalog?.projects
+          .where((project) => p.equals(project.path, path))
+          .firstOrNull;
+      if (project != null) loadProjectHistory(project);
     }
     _notify();
   }
@@ -865,17 +867,43 @@ class WorkbenchController extends ChangeNotifier {
     _notify();
   }
 
-  Future<void> addProject(String path, {String? sectionId}) async {
+  Future<bool> addProject(String path, {String? sectionId}) async {
     failure = null;
     try {
       final workspace = await api.addProject(path, sectionId: sectionId);
       await refresh();
       await selectWorktree(workspace);
+      return failure == null;
     } catch (error) {
       failure = errorCode(error);
       _notify();
+      return false;
     }
   }
+
+  Future<bool> createProject(
+    String parent,
+    String name, {
+    String? sectionId,
+  }) async {
+    failure = null;
+    try {
+      final workspace = await api.createProject(
+        parent,
+        name,
+        sectionId: sectionId,
+      );
+      await refresh();
+      await selectWorktree(workspace);
+      return failure == null;
+    } catch (error) {
+      failure = errorCode(error);
+      _notify();
+      return false;
+    }
+  }
+
+  Future<void> hideUnassigned() => _organize(api.hideUnassigned);
 
   Future<void> _organize(Future<void> Function() change) async {
     if (organizing || hasWorkspaceOperation) return;

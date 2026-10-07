@@ -89,12 +89,13 @@ class PiCatalog {
       jobs = List.unmodifiable(
         (json['jobs'] as List).map(PiWorkspaceJob.fromJson),
       ),
+      unassignedHidden = json['unassignedHidden'] == true,
       persistenceWarning = json['persistenceWarning'] == true;
   final List<PiCatalogSection> sections;
   final List<PiCatalogProject> projects;
   final List<PiChannelInfo> channels;
   final List<PiWorkspaceJob> jobs;
-  final bool persistenceWarning;
+  final bool persistenceWarning, unassignedHidden;
 }
 
 /// Strongly typed GUI management API; no raw JSON in widgets/controllers.
@@ -111,6 +112,24 @@ class PiCatalogService {
             }),
           )['path']
           as String;
+  Future<void> hideUnassigned() async {
+    await client.requestGui('gui_hide_unassigned', {});
+  }
+
+  Future<String> createProject(
+    String parent,
+    String name, {
+    String? sectionId,
+  }) async =>
+      rpcObject(
+            await client.requestGui('gui_create_project', {
+              'parent': parent,
+              'name': name,
+              'sectionId': ?sectionId,
+            }),
+          )['path']
+          as String;
+
   Future<void> createSection(String id, String name) async {
     await client.requestGui('gui_create_section', {
       'sectionId': id,

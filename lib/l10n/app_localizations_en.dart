@@ -2428,4 +2428,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String sectionWorktree(String name) {
     return 'Worktree · $name';
   }
+
+  @override
+  String get sectionRemoveUnassignedHint =>
+      'Remove the Unassigned heading and show its projects directly in the list. Files and conversations will be kept.';
+
+  @override
+  String get projectQuickChoose => 'Choose project folder';
+
+  @override
+  String get projectQuickHint =>
+      'Selecting a project opens a conversation in that folder. Your current conversation and draft are kept.';
+
+  @override
+  String get projectQuickSearch => 'Search project name or path…';
+
+  @override
+  String get projectCreateFolder => 'Create project folder';
 }

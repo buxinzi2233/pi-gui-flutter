@@ -702,3 +702,87 @@ test("removing a project during a descendant history read cannot launch a late c
     await rejected;
     assert.equal(manager.channels.size, 0);
 });
+
+test("removing the Unassigned heading persists without changing projects or conversations", async (t) => {
+    const { repo, manager, service, children } = await fixture(t);
+    await manager.control({ type: "gui_hide_unassigned" });
+    const catalog = await manager.catalog();
+    assert.equal(catalog.unassignedHidden, true);
+    assert.equal(catalog.projects[0].path, repo);
+    assert.equal(catalog.channels.length, 1);
+    assert.equal(children[0].stopped, false);
+    assert.equal(
+        JSON.parse(await readFile(service.storePath, "utf8")).catalog
+            .unassignedHidden,
+        true,
+    );
+    await manager.initialize();
+    assert.equal((await manager.catalog()).unassignedHidden, true);
+});
+
+test("quick project creation validates names and duplicates and preserves active conversations", async (t) => {
+    const { root, manager, children } = await fixture(t);
+    await manager.control({
+        type: "gui_create_section",
+        sectionId: "work",
+        name: "工作",
+    });
+    const result = await manager.control({
+        type: "gui_create_project",
+        parent: root,
+        name: "new project",
+        sectionId: "work",
+    });
+    assert.equal(result.path, path.join(root, "new project"));
+    assert.equal(existsSync(result.path), true);
+    assert.equal(
+        (await manager.catalog()).projects.find((p) => p.path === result.path)
+            .sectionId,
+        "work",
+    );
+    assert.equal(manager.channels.size, 1);
+    assert.equal(children[0].stopped, false);
+    await assert.rejects(
+        manager.control({
+            type: "gui_create_project",
+            parent: root,
+            name: "new project",
+        }),
+        { code: "PATH_EXISTS" },
+    );
+    await assert.rejects(
+        manager.control({
+            type: "gui_create_project",
+            parent: root,
+            name: "../escape",
+        }),
+        { code: "INVALID_NAME" },
+    );
+    await assert.rejects(
+        manager.control({
+            type: "gui_create_project",
+            parent: root,
+            name: "no-group",
+            sectionId: "missing",
+        }),
+        { code: "SECTION_UNAVAILABLE" },
+    );
+    assert.equal(existsSync(path.join(root, "no-group")), false);
+});
+
+test("child conversation directories stay discoverable after closing channels and reloading catalog", async (t) => {
+    const { repo, manager, service } = await fixture(t);
+    const nested = path.join(repo, "nested");
+    await mkdir(nested);
+    await manager.openChannel({ channelId: "child", workspace: nested });
+    await manager.closeChannel({ channelId: "child" });
+    assert.ok(manager.projects[0].folders.includes(nested));
+    const saved = JSON.parse(await readFile(service.storePath, "utf8")).catalog;
+    assert.ok(saved.projects[0].folders.includes(nested));
+    await manager.initialize();
+    assert.ok(
+        (await manager.catalog()).projects[0].worktrees.some(
+            (w) => w.path === nested,
+        ),
+    );
+});

@@ -6,7 +6,6 @@ import 'package:pi_gui/ui/features/home/controllers/workbench_controller.dart';
 
 import 'pi_rpc_client_test.dart' show TestTransport;
 import 'parallel_session_test.dart' show reply;
-import 'workspace_browser_test.dart' show listing;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +39,7 @@ void main() {
     expect(catalog.projects.single.path, '/real/Projects');
   });
 
-  test('lazy subdirectory history survives catalog refresh and section moves do not launch channels', () async {
+  test('conversation sidebar retains child histories without reading files or launching channels', () async {
     final root = p.absolute('project');
     final child = p.join(root, 'src');
     final transport = TestTransport();
@@ -48,7 +47,7 @@ void main() {
       hub: PiChannelHub(() async => transport),
     );
     String? sectionId;
-    var rootReads = 0, childReads = 0;
+    var fileReads = 0;
     transport.onSend = (packet) {
       final command = packet['message'] as Map;
       switch (command['type']) {
@@ -65,6 +64,7 @@ void main() {
                 'branches': <String>[],
                 'worktrees': [
                   {'path': root, 'name': 'project', 'main': true},
+                  {'path': child, 'name': 'src', 'folder': true},
                 ],
               },
             ],
@@ -72,13 +72,8 @@ void main() {
             'jobs': <Object>[],
           });
         case 'gui_list_files':
-          final relative = command['path'] as String;
-          if (relative.isEmpty) {
-            rootReads++;
-          } else {
-            childReads++;
-          }
-          reply(transport, packet, listing(root, path: relative));
+          fileReads++;
+          throw StateError('Conversation navigation must not read files');
         case 'gui_workspace_history':
           reply(transport, packet, {'sessions': <Object>[]});
         case 'gui_move_project':
@@ -94,29 +89,27 @@ void main() {
     });
     await workbench.initialize();
     await Future<void>.delayed(Duration.zero);
-    expect(rootReads, 1);
-    expect(childReads, 0);
-    workbench.toggleDirectory(root, 'src');
-    await Future<void>.delayed(Duration.zero);
-    expect(childReads, 1);
+    expect(fileReads, 0);
     expect(workbench.history.containsKey(child), true);
     final browser = workbench.browserFor(root);
     await workbench.moveProject(root, 'work');
     expect(workbench.catalog!.projects.single.sectionId, 'work');
     expect(workbench.history.containsKey(child), true);
-    expect(workbench.expandedWorktrees, contains(child));
+    expect(
+      workbench.workspacesForProject(workbench.catalog!.projects.single),
+      contains(child),
+    );
     expect(workbench.browserFor(root), same(browser));
-    expect(rootReads, 1);
-    expect(childReads, 1);
+    expect(fileReads, 0);
     expect(
       transport.commands.where(
         (packet) => (packet['message'] as Map)['type'] == 'gui_open_channel',
       ),
       isEmpty,
     );
-    workbench.toggleDirectory(root, 'src');
-    workbench.toggleDirectory(root, 'src');
+    workbench.toggleProject(root);
+    workbench.toggleProject(root);
     await Future<void>.delayed(Duration.zero);
-    expect(childReads, 1);
+    expect(fileReads, 0);
   });
 }

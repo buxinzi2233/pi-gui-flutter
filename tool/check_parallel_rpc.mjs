@@ -198,13 +198,36 @@ try {
   );
   assert.ok(ungrouped.channels.some((channel) => channel.id === "nested"));
   await request("control", "gui_close_channel", { channelId: "nested" });
+  const created = await request("control", "gui_create_project", {
+    parent: root,
+    name: "quick-created",
+  });
+  assert.equal(created.path, path.join(root, "quick-created"));
+  await request("control", "gui_open_channel", {
+    channelId: "created",
+    workspace: created.path,
+  });
+  const createdCwd = await request("created", "bash", {
+    command: 'node -p "process.cwd()"',
+    excludeFromContext: true,
+  });
+  assert.equal(
+    path.normalize(createdCwd.output.trim()),
+    path.normalize(created.path),
+  );
+  await request("control", "gui_hide_unassigned");
+  assert.equal(
+    (await request("control", "gui_get_catalog")).unassignedHidden,
+    true,
+  );
+  await request("control", "gui_close_channel", { channelId: "created" });
   const bMessages = await request("b", "get_messages");
   await request("control", "gui_close_channel", { channelId: "a" });
   const after = await request("primary", "get_state");
   assert.equal(after.sessionId, primaryState.sessionId);
   assert.deepEqual(await request("b", "get_messages"), bMessages);
   console.log(
-    "PASS: real multiplex JSONL, overlapping Pi bash barrier, same request IDs, same-directory sessions, history dedup, cross-project and nested cwd, virtual sections, targeted close; no model calls.",
+    "PASS: real multiplex JSONL, overlapping Pi bash barrier, same request IDs, same-directory sessions, history dedup, cross-project and nested cwd, virtual sections, quick folder creation, removable default heading, targeted close; no model calls.",
   );
 } finally {
   for (const item of pending.values()) clearTimeout(item.timer);

@@ -23,6 +23,7 @@ import 'package:pi_gui/ui/core/window_material_scope.dart';
 import '../controllers/workbench_controller.dart';
 import '../controllers/workspace_tabs_controller.dart';
 import '../widgets/home_chat_panel.dart';
+import '../widgets/project_picker_dialog.dart';
 import '../widgets/tool_card_registry.dart';
 import '../widgets/workbench_sidebar.dart';
 import '../widgets/workspace_browser_panel.dart';
@@ -320,6 +321,13 @@ class _HomeViewState extends State<HomeView> with WindowListener {
           modelPicker: session.models,
           input: session.input,
           attachments: session.attachments,
+          onChooseProject: () => showAppDialog<void>(
+            context,
+            (_) => ProjectPickerDialog(
+              controller: _workbench,
+              current: session.workspace,
+            ),
+          ),
           project: session.workspace.split(RegExp(r'[/\\]')).last,
           registry: _toolCards,
           browser: _workbench.browserFor(session.workspace),

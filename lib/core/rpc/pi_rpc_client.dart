@@ -26,6 +26,8 @@ class _PendingRequest {
     'gui_add_project',
     'gui_forget_project',
     'gui_create_section',
+    'gui_hide_unassigned',
+    'gui_create_project',
     'gui_update_section',
     'gui_delete_section',
     'gui_move_project',

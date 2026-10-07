@@ -2274,4 +2274,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String sectionWorktree(String name) {
     return 'Worktree · $name';
   }
+
+  @override
+  String get sectionRemoveUnassignedHint =>
+      '移除“未分区”标题后，其中的项目会直接显示在列表中。文件和会话会保留。';
+
+  @override
+  String get projectQuickChoose => '选择项目文件夹';
+
+  @override
+  String get projectQuickHint => '选择项目会打开该目录的会话，当前对话和草稿会保留。';
+
+  @override
+  String get projectQuickSearch => '搜索项目名称或路径…';
+
+  @override
+  String get projectCreateFolder => '新建项目文件夹';
 }

@@ -952,6 +952,10 @@
         "type": "String"
       }
     }
-  }
-
+  },
+  "sectionRemoveUnassignedHint": "Remove the Unassigned heading and show its projects directly in the list. Files and conversations will be kept.",
+  "projectQuickChoose": "Choose project folder",
+  "projectQuickHint": "Selecting a project opens a conversation in that folder. Your current conversation and draft are kept.",
+  "projectQuickSearch": "Search project name or path…",
+  "projectCreateFolder": "Create project folder"
 }
