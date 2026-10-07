@@ -668,7 +668,7 @@
   "tabsReadOnly": "只读",
   "tabsRefresh": "重新读取此预览",
   "workbenchSharedDirectory": "同一目录还有其他会话正在运行，可能修改同一份文件。需要隔离时请新建 Worktree。",
-  "workbenchSearch": "搜索项目、Worktree 和会话…",
+  "workbenchSearch": "搜索分区、项目和会话…",
   "workbenchAddProject": "添加项目",
   "workbenchMain": "主目录",
   "workbenchWaiting": "等待回答",
@@ -980,5 +980,26 @@
 "hooksActionUninstall": "卸载",
 "hooksActionRestore": "恢复",
 "hooksMenuTooltip": "更改钩子状态",
-"hooksNoChannel": "没有可用的控制通道，钩子设置暂时无法使用。"
+"hooksNoChannel": "没有可用的控制通道，钩子设置暂时无法使用。",
+  "sectionCreate": "新建分区",
+  "sectionRename": "重命名分区",
+  "sectionDelete": "删除分区",
+  "sectionDeleteDescription": "分区内的项目将移到“未分区”，项目文件和会话会保留。",
+  "sectionMoveProject": "移动到分区",
+  "sectionUnassigned": "未分区",
+  "sectionManage": "管理分区",
+  "sectionMoveUp": "上移",
+  "sectionMoveDown": "下移",
+  "sectionEmpty": "添加项目到此分区",
+  "sectionName": "分区名称",
+  "sectionUnavailable": "分区已变更，请刷新列表后重试。",
+  "sectionWorktree": "Worktree · {name}",
+  "@sectionWorktree": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+
 }

@@ -1670,7 +1670,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Another session is running in this directory and may edit the same files. Create a worktree to isolate changes.';
 
   @override
-  String get workbenchSearch => 'Search projects, worktrees and sessions…';
+  String get workbenchSearch => 'Search sections, projects and sessions…';
 
   @override
   String get workbenchAddProject => 'Add project';
@@ -2385,4 +2385,47 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hooksNoChannel =>
       'No control channel is available; hook settings are unavailable.';
+
+  @override
+  String get sectionCreate => 'New section';
+
+  @override
+  String get sectionRename => 'Rename section';
+
+  @override
+  String get sectionDelete => 'Delete section';
+
+  @override
+  String get sectionDeleteDescription =>
+      'Projects will move to Unassigned. Their files and conversations will be kept.';
+
+  @override
+  String get sectionMoveProject => 'Move to section';
+
+  @override
+  String get sectionUnassigned => 'Unassigned';
+
+  @override
+  String get sectionManage => 'Manage section';
+
+  @override
+  String get sectionMoveUp => 'Move up';
+
+  @override
+  String get sectionMoveDown => 'Move down';
+
+  @override
+  String get sectionEmpty => 'Add a project to this section';
+
+  @override
+  String get sectionName => 'Section name';
+
+  @override
+  String get sectionUnavailable =>
+      'This section has changed. Refresh the list and try again.';
+
+  @override
+  String sectionWorktree(String name) {
+    return 'Worktree · $name';
+  }
 }

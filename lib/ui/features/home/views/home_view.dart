@@ -125,12 +125,14 @@ class _HomeViewState extends State<HomeView> with WindowListener {
     await _workbench.closeSession(session.id, stop: busy);
   }
 
-  Future<void> _addProject() async {
+  Future<void> _addProject([String? sectionId]) async {
     try {
       final path = await getDirectoryPath(
         confirmButtonText: context.l10n.workbenchAddProject,
       );
-      if (mounted && path != null) await _workbench.addProject(path);
+      if (mounted && path != null) {
+        await _workbench.addProject(path, sectionId: sectionId);
+      }
     } catch (_) {
       if (mounted) {
         await _confirm(

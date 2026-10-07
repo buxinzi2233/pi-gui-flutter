@@ -3047,7 +3047,7 @@ abstract class AppLocalizations {
   /// No description provided for @workbenchSearch.
   ///
   /// In zh, this message translates to:
-  /// **'搜索项目、Worktree 和会话…'**
+  /// **'搜索分区、项目和会话…'**
   String get workbenchSearch;
 
   /// No description provided for @workbenchAddProject.
@@ -4297,6 +4297,84 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'没有可用的控制通道，钩子设置暂时无法使用。'**
   String get hooksNoChannel;
+
+  /// No description provided for @sectionCreate.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建分区'**
+  String get sectionCreate;
+
+  /// No description provided for @sectionRename.
+  ///
+  /// In zh, this message translates to:
+  /// **'重命名分区'**
+  String get sectionRename;
+
+  /// No description provided for @sectionDelete.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除分区'**
+  String get sectionDelete;
+
+  /// No description provided for @sectionDeleteDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'分区内的项目将移到“未分区”，项目文件和会话会保留。'**
+  String get sectionDeleteDescription;
+
+  /// No description provided for @sectionMoveProject.
+  ///
+  /// In zh, this message translates to:
+  /// **'移动到分区'**
+  String get sectionMoveProject;
+
+  /// No description provided for @sectionUnassigned.
+  ///
+  /// In zh, this message translates to:
+  /// **'未分区'**
+  String get sectionUnassigned;
+
+  /// No description provided for @sectionManage.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理分区'**
+  String get sectionManage;
+
+  /// No description provided for @sectionMoveUp.
+  ///
+  /// In zh, this message translates to:
+  /// **'上移'**
+  String get sectionMoveUp;
+
+  /// No description provided for @sectionMoveDown.
+  ///
+  /// In zh, this message translates to:
+  /// **'下移'**
+  String get sectionMoveDown;
+
+  /// No description provided for @sectionEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加项目到此分区'**
+  String get sectionEmpty;
+
+  /// No description provided for @sectionName.
+  ///
+  /// In zh, this message translates to:
+  /// **'分区名称'**
+  String get sectionName;
+
+  /// No description provided for @sectionUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'分区已变更，请刷新列表后重试。'**
+  String get sectionUnavailable;
+
+  /// No description provided for @sectionWorktree.
+  ///
+  /// In zh, this message translates to:
+  /// **'Worktree · {name}'**
+  String sectionWorktree(String name);
 }
 
 class _AppLocalizationsDelegate

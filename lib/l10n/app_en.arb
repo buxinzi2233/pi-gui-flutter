@@ -668,7 +668,7 @@
   "tabsReadOnly": "Read-only",
   "tabsRefresh": "Reload this preview",
   "workbenchSharedDirectory": "Another session is running in this directory and may edit the same files. Create a worktree to isolate changes.",
-  "workbenchSearch": "Search projects, worktrees and sessions…",
+  "workbenchSearch": "Search sections, projects and sessions…",
   "workbenchAddProject": "Add project",
   "workbenchMain": "Main",
   "workbenchWaiting": "Waiting for you",
@@ -932,5 +932,26 @@
 "hooksActionUninstall": "Uninstall",
 "hooksActionRestore": "Restore",
 "hooksMenuTooltip": "Change hook state",
-"hooksNoChannel": "No control channel is available; hook settings are unavailable."
+"hooksNoChannel": "No control channel is available; hook settings are unavailable.",
+  "sectionCreate": "New section",
+  "sectionRename": "Rename section",
+  "sectionDelete": "Delete section",
+  "sectionDeleteDescription": "Projects will move to Unassigned. Their files and conversations will be kept.",
+  "sectionMoveProject": "Move to section",
+  "sectionUnassigned": "Unassigned",
+  "sectionManage": "Manage section",
+  "sectionMoveUp": "Move up",
+  "sectionMoveDown": "Move down",
+  "sectionEmpty": "Add a project to this section",
+  "sectionName": "Section name",
+  "sectionUnavailable": "This section has changed. Refresh the list and try again.",
+  "sectionWorktree": "Worktree · {name}",
+  "@sectionWorktree": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+
 }

@@ -1562,7 +1562,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '同一目录还有其他会话正在运行，可能修改同一份文件。需要隔离时请新建 Worktree。';
 
   @override
-  String get workbenchSearch => '搜索项目、Worktree 和会话…';
+  String get workbenchSearch => '搜索分区、项目和会话…';
 
   @override
   String get workbenchAddProject => '添加项目';
@@ -2233,4 +2233,45 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hooksNoChannel => '没有可用的控制通道，钩子设置暂时无法使用。';
+
+  @override
+  String get sectionCreate => '新建分区';
+
+  @override
+  String get sectionRename => '重命名分区';
+
+  @override
+  String get sectionDelete => '删除分区';
+
+  @override
+  String get sectionDeleteDescription => '分区内的项目将移到“未分区”，项目文件和会话会保留。';
+
+  @override
+  String get sectionMoveProject => '移动到分区';
+
+  @override
+  String get sectionUnassigned => '未分区';
+
+  @override
+  String get sectionManage => '管理分区';
+
+  @override
+  String get sectionMoveUp => '上移';
+
+  @override
+  String get sectionMoveDown => '下移';
+
+  @override
+  String get sectionEmpty => '添加项目到此分区';
+
+  @override
+  String get sectionName => '分区名称';
+
+  @override
+  String get sectionUnavailable => '分区已变更，请刷新列表后重试。';
+
+  @override
+  String sectionWorktree(String name) {
+    return 'Worktree · $name';
+  }
 }
