@@ -26,7 +26,7 @@ Pi 是一个命令行 AI 编程助手。这个项目给它套了一层图形界�
 - **历史会话可回退**：从历史记录里恢复旧对话，可以从任意一条消息往回退、另开分支继续。
 - **图片与链接**：往输入框里拖图、粘贴图都行，对话里的图片可以直接预览。
 - **换模型很方便**：不用记模型名，下拉列表里选就行，搜索、思考档位一起配好。
-- **长得也行**：跟随 Windows 主题色，明暗模式分开调，支持基准字号和界面缩放。桌面毛玻璃需要 Windows 11 22H2+，系统不支持时自动退回普通背景。
+- **长得也行**：跟随 Windows 主题色，明暗模式分开调，支持基准字号和界面缩放。桌面毛玻璃支持 Windows 11 22H2+ 和提供标准背景效果协议的 Wayland 桌面；系统不支持时显示纯色并提示原因。
 
 ## 界面预览
 
@@ -56,11 +56,13 @@ Pi 是一个命令行 AI 编程助手。这个项目给它套了一层图形界�
 
 ## 从源码运行
 
-需要 Windows 桌面 Flutter 开发环境（固定 Flutter **3.47.4 / stable**，Dart **3.13.3**）。
+需要对应桌面平台的 Flutter 开发环境（固定 Flutter **3.47.4 / stable**，Dart **3.13.3**）。
 
 ```bash
 flutter pub get --enforce-lockfile
 flutter run -d windows
+# Linux native build dependencies are listed in docs/appearance_settings.md.
+# On Linux, use: flutter run -d linux
 ```
 
 两点提醒：

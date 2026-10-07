@@ -2633,7 +2633,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceGlassHint.
   ///
   /// In zh, this message translates to:
-  /// **'顶部与侧栏、主界面和卡片分别设置。桌面模糊由 Windows 控制，卡片模糊应用内背景，文字保持清晰。明暗模式共用设置，需要 Windows 11 22H2 或更新版本。'**
+  /// **'顶部与侧栏、主界面和卡片分别设置。桌面模糊由系统控制，卡片模糊应用内背景，文字保持清晰。明暗模式共用设置，需要 Windows 11 22H2 或更新版本，或支持标准背景效果协议的 Wayland 桌面。'**
   String get appearanceGlassHint;
 
   /// No description provided for @appearanceGlassSidebar.
@@ -2711,13 +2711,13 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceGlassSystemDisabled.
   ///
   /// In zh, this message translates to:
-  /// **'系统暂未允许透明效果，正在显示纯色。请检查 Windows 的“透明效果”、对比度主题和节电模式。'**
+  /// **'系统暂未允许模糊或透明效果，正在显示纯色。请检查桌面效果；Windows 下还需检查“透明效果”、对比度主题和节电模式。'**
   String get appearanceGlassSystemDisabled;
 
   /// No description provided for @appearanceGlassUnsupported.
   ///
   /// In zh, this message translates to:
-  /// **'当前系统不支持此材质，正在显示纯色。需要 Windows 11 22H2 或更新版本。'**
+  /// **'当前桌面不支持此材质，正在显示纯色。需要 Windows 11 22H2 或更新版本，或提供标准背景效果协议的 Wayland 桌面；暂不支持 X11 和旧桌面专用模糊协议。'**
   String get appearanceGlassUnsupported;
 
   /// No description provided for @appearanceGlassUnavailable.
