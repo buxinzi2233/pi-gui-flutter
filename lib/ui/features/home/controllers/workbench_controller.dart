@@ -718,16 +718,17 @@ class WorkbenchController extends ChangeNotifier {
     return match;
   }
 
-  Iterable<String> workspacesForProject(PiCatalogProject project) => {
-    project.path,
-    ...project.worktrees.where((w) => !w.unavailable).map((w) => w.path),
-    ...sessions.values
-        .map((s) => s.workspace)
-        .where((path) => projectForWorkspace(path)?.path == project.path),
-    ...history.keys.where(
-      (path) => projectForWorkspace(path)?.path == project.path,
-    ),
-  };
+  Iterable<String> workspacesForProject(PiCatalogProject project) =>
+      LinkedHashSet<String>(equals: p.equals, hashCode: p.hash)..addAll({
+        project.path,
+        ...project.worktrees.where((w) => !w.unavailable).map((w) => w.path),
+        ...sessions.values
+            .map((s) => s.workspace)
+            .where((path) => projectForWorkspace(path)?.path == project.path),
+        ...history.keys.where(
+          (path) => projectForWorkspace(path)?.path == project.path,
+        ),
+      });
 
   void loadProjectHistory(PiCatalogProject project) {
     for (final path in workspacesForProject(project)) {

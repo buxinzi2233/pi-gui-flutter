@@ -91,6 +91,14 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(fileReads, 0);
     expect(workbench.history.containsKey(child), true);
+    final childAlias = p.style == p.Style.windows
+        ? child.replaceAll('\\', '/').toUpperCase()
+        : '$child/.';
+    workbench.history[childAlias] = workbench.history[child]!;
+    expect(
+      workbench.workspacesForProject(workbench.catalog!.projects.single),
+      [root, child],
+    );
     final browser = workbench.browserFor(root);
     await workbench.moveProject(root, 'work');
     expect(workbench.catalog!.projects.single.sectionId, 'work');
